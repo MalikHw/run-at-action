@@ -345,14 +345,17 @@ namespace {
     }
 
     $on_mod(Loaded) {
-        (void)ButtonSettingPressedEventV3(Mod::get(), std::string(kSettingKey)).listen(
-            [](std::string_view key) {
-                if (key == "open") {
-                    if (auto popup = EventConfigPopup::create()) popup->show();
+        static ListenerHandle* sButtonListener = nullptr;
+        if (!sButtonListener) {
+            sButtonListener = ButtonSettingPressedEventV3(Mod::get(), std::string(kSettingKey)).listen(
+                [](std::string_view key) {
+                    if (key == "open") {
+                        if (auto popup = EventConfigPopup::create()) popup->show();
+                    }
+                    return ListenerResult::Propagate;
                 }
-                return ListenerResult::Propagate;
-            }
-        );
+            ).leak();
+        }
     }
 }
 
