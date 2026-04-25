@@ -5,6 +5,9 @@
 #include <Geode/binding/PlayLayer.hpp>
 #include <Geode/loader/Mod.hpp>
 #include <Geode/loader/SettingV3.hpp>
+#include <Geode/modify/GJBaseGameLayer.hpp>
+#include <Geode/modify/PauseLayer.hpp>
+#include <Geode/modify/PlayLayer.hpp>
 #include <Geode/ui/Popup.hpp>
 #include <Geode/ui/TextInput.hpp>
 
