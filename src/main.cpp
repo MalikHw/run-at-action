@@ -140,10 +140,100 @@ namespace {
         }
     }
 
-    class EventConfigPopup : public Popup<> {
+    class EventConfigPopup;
+
+    class RuleInputPopup : public Popup {
+    protected:
+        EventConfigPopup* m_parent = nullptr;
+        TextInput* m_eventInput = nullptr;
+        TextInput* m_commandInput = nullptr;
+
+        bool init(EventConfigPopup* parent) {
+            if (!Popup::init(260.f, 170.f)) return false;
+            m_parent = parent;
+            this->setTitle("Add Event Rule");
+
+            auto info = CCLabelBMFont::create(
+                "Event (1-6): 1 Death, 2 CP+, 3 CP-, 4 Mode, 5 Enter, 6 Quit",
+                "goldFont.fnt"
+            );
+            info->setScale(0.28f);
+            info->setAnchorPoint({0.5f, 0.5f});
+            info->setPosition({m_size.width / 2.f, m_size.height - 45.f});
+            m_mainLayer->addChild(info);
+
+            m_eventInput = TextInput::create(210.f, "Event Number");
+            m_eventInput->setCommonFilter(CommonFilter::Int);
+            m_eventInput->setMaxCharCount(1);
+            m_eventInput->setPosition({m_size.width / 2.f, m_size.height - 70.f});
+            m_mainLayer->addChild(m_eventInput);
+
+            m_commandInput = TextInput::create(210.f, "Command / pre.exit / pre.quit");
+            m_commandInput->setCommonFilter(CommonFilter::Any);
+            m_commandInput->setMaxCharCount(180);
+            m_commandInput->setPosition({m_size.width / 2.f, m_size.height - 100.f});
+            m_mainLayer->addChild(m_commandInput);
+
+            auto btnSprite = ButtonSprite::create("ADD");
+            auto addBtn = CCMenuItemSpriteExtra::create(
+                btnSprite, this, menu_selector(RuleInputPopup::onConfirm)
+            );
+            auto menu = CCMenu::create();
+            menu->addChild(addBtn);
+            menu->setPosition({m_size.width / 2.f, 28.f});
+            m_mainLayer->addChild(menu);
+            return true;
+        }
+
+        void onConfirm(CCObject*);
+
+    public:
+        static RuleInputPopup* create(EventConfigPopup* parent) {
+            auto ret = new RuleInputPopup();
+            if (ret->init(parent)) {
+                ret->autorelease();
+                return ret;
+            }
+            CC_SAFE_DELETE(ret);
+            return nullptr;
+        }
+    };
+
+    class EventConfigPopup : public Popup {
     protected:
         std::vector<EventRule> m_rules;
         CCLabelBMFont* m_listLabel = nullptr;
+
+        bool init() {
+            if (!Popup::init(280.f, 210.f)) return false;
+            this->setTitle("Event Commands");
+            m_rules = loadRules();
+
+            m_listLabel = CCLabelBMFont::create("", "bigFont.fnt");
+            m_listLabel->setAnchorPoint({0.5f, 1.f});
+            m_listLabel->setPosition({m_size.width / 2.f, m_size.height - 30.f});
+            m_listLabel->setScale(0.35f);
+            m_mainLayer->addChild(m_listLabel);
+            refreshLabel();
+
+            auto addSprite = ButtonSprite::create("ADD");
+            auto clearSprite = ButtonSprite::create("CLEAR");
+            auto addBtn = CCMenuItemSpriteExtra::create(
+                addSprite, this, menu_selector(EventConfigPopup::onAdd)
+            );
+            auto clearBtn = CCMenuItemSpriteExtra::create(
+                clearSprite, this, menu_selector(EventConfigPopup::onClear)
+            );
+
+            auto menu = CCMenu::create();
+            menu->addChild(addBtn);
+            menu->addChild(clearBtn);
+            menu->setPosition({m_size.width / 2.f, 24.f});
+            addBtn->setPosition({-55.f, 0.f});
+            clearBtn->setPosition({55.f, 0.f});
+            m_mainLayer->addChild(menu);
+            return true;
+        }
 
         void refreshLabel() {
             std::string text = "No events configured.";
@@ -174,7 +264,7 @@ namespace {
         }
 
         void openEventTypeStep() {
-            auto stepPopup = createQuickPopup(
+            createQuickPopup(
                 "Event Type",
                 "Use these in order:\n1) Death\n2) CP Added\n3) CP Removed\n4) Gamemode\n5) Enter Level\n6) Quit Level\n\nPress OK to continue.",
                 "Cancel",
@@ -184,94 +274,10 @@ namespace {
                     this->openEventAndCommandInput();
                 }
             );
-            if (stepPopup) stepPopup->show();
         }
 
         void openEventAndCommandInput() {
-            class RuleInputPopup : public Popup<> {
-            public:
-                EventConfigPopup* m_parent = nullptr;
-                TextInput* m_eventInput = nullptr;
-                TextInput* m_commandInput = nullptr;
-
-                static RuleInputPopup* create(EventConfigPopup* parent) {
-                    auto ret = new RuleInputPopup();
-                    ret->m_parent = parent;
-                    if (ret->initAnchored(260.f, 170.f)) {
-                        ret->autorelease();
-                        return ret;
-                    }
-                    CC_SAFE_DELETE(ret);
-                    return nullptr;
-                }
-
-                bool setup() override {
-                    this->setTitle("Add Event Rule");
-
-                    auto info = CCLabelBMFont::create(
-                        "Event (1-6): 1 Death, 2 CP+, 3 CP-, 4 Mode, 5 Enter, 6 Quit",
-                        "goldFont.fnt"
-                    );
-                    info->setScale(0.28f);
-                    info->setAnchorPoint({0.5f, 0.5f});
-                    info->setPosition({m_size.width / 2.f, m_size.height - 45.f});
-                    m_mainLayer->addChild(info);
-
-                    m_eventInput = TextInput::create(210.f, "Event Number");
-                    m_eventInput->setCommonFilter(CommonFilter::Int);
-                    m_eventInput->setMaxCharCount(1);
-                    m_eventInput->setPosition({m_size.width / 2.f, m_size.height - 70.f});
-                    m_mainLayer->addChild(m_eventInput);
-
-                    m_commandInput = TextInput::create(210.f, "Command / pre.exit / pre.quit");
-                    m_commandInput->setCommonFilter(CommonFilter::Any);
-                    m_commandInput->setMaxCharCount(180);
-                    m_commandInput->setPosition({m_size.width / 2.f, m_size.height - 100.f});
-                    m_mainLayer->addChild(m_commandInput);
-
-                    auto btnSprite = ButtonSprite::create("ADD");
-                    auto addBtn = CCMenuItemSpriteExtra::create(
-                        btnSprite, nullptr, this, menu_selector(RuleInputPopup::onConfirm)
-                    );
-                    auto menu = CCMenu::create();
-                    menu->addChild(addBtn);
-                    menu->setPosition({m_size.width / 2.f, 28.f});
-                    m_mainLayer->addChild(menu);
-                    return true;
-                }
-
-                void onConfirm(CCObject*) {
-                    auto eventText = trim(m_eventInput->getString());
-                    auto command = trim(m_commandInput->getString());
-                    if (eventText.empty() || command.empty()) {
-                        FLAlertLayer::create("Missing", "Event and command are required.", "OK")->show();
-                        return;
-                    }
-
-                    int eventNum = 0;
-                    try {
-                        eventNum = std::stoi(eventText);
-                    }
-                    catch (...) {
-                        FLAlertLayer::create("Invalid", "Event must be a number 1 to 6.", "OK")->show();
-                        return;
-                    }
-
-                    if (eventNum < 1 || eventNum > 6) {
-                        FLAlertLayer::create("Invalid", "Event must be a number 1 to 6.", "OK")->show();
-                        return;
-                    }
-
-                    m_parent->m_rules.push_back({static_cast<EventType>(eventNum - 1), command});
-                    saveRules(m_parent->m_rules);
-                    m_parent->refreshLabel();
-                    this->onClose(nullptr);
-                }
-            };
-
-            if (auto popup = RuleInputPopup::create(this)) {
-                popup->show();
-            }
+            if (auto popup = RuleInputPopup::create(this)) popup->show();
         }
 
         void onClear(CCObject*) {
@@ -292,7 +298,7 @@ namespace {
     public:
         static EventConfigPopup* create() {
             auto ret = new EventConfigPopup();
-            if (ret->initAnchored(280.f, 210.f)) {
+            if (ret->init()) {
                 ret->autorelease();
                 return ret;
             }
@@ -300,36 +306,40 @@ namespace {
             return nullptr;
         }
 
-        bool setup() override {
-            this->setTitle("Event Commands");
-            m_rules = loadRules();
-
-            m_listLabel = CCLabelBMFont::create("", "bigFont.fnt");
-            m_listLabel->setAnchorPoint({0.5f, 1.f});
-            m_listLabel->setPosition({m_size.width / 2.f, m_size.height - 30.f});
-            m_listLabel->setScale(0.35f);
-            m_mainLayer->addChild(m_listLabel);
+        void addRule(EventRule const& rule) {
+            m_rules.push_back(rule);
+            saveRules(m_rules);
             refreshLabel();
-
-            auto addSprite = ButtonSprite::create("ADD");
-            auto clearSprite = ButtonSprite::create("CLEAR");
-            auto addBtn = CCMenuItemSpriteExtra::create(
-                addSprite, nullptr, this, menu_selector(EventConfigPopup::onAdd)
-            );
-            auto clearBtn = CCMenuItemSpriteExtra::create(
-                clearSprite, nullptr, this, menu_selector(EventConfigPopup::onClear)
-            );
-
-            auto menu = CCMenu::create();
-            menu->addChild(addBtn);
-            menu->addChild(clearBtn);
-            menu->setPosition({m_size.width / 2.f, 24.f});
-            addBtn->setPosition({-55.f, 0.f});
-            clearBtn->setPosition({55.f, 0.f});
-            m_mainLayer->addChild(menu);
-            return true;
         }
     };
+
+    void RuleInputPopup::onConfirm(CCObject*) {
+        auto eventText = trim(m_eventInput->getString());
+        auto command = trim(m_commandInput->getString());
+        if (eventText.empty() || command.empty()) {
+            FLAlertLayer::create("Missing", "Event and command are required.", "OK")->show();
+            return;
+        }
+
+        int eventNum = 0;
+        try {
+            eventNum = std::stoi(eventText);
+        }
+        catch (...) {
+            FLAlertLayer::create("Invalid", "Event must be a number 1 to 6.", "OK")->show();
+            return;
+        }
+
+        if (eventNum < 1 || eventNum > 6) {
+            FLAlertLayer::create("Invalid", "Event must be a number 1 to 6.", "OK")->show();
+            return;
+        }
+
+        if (m_parent) {
+            m_parent->addRule({static_cast<EventType>(eventNum - 1), command});
+        }
+        this->onClose(nullptr);
+    }
 
     $on_mod(Loaded) {
         (void)ButtonSettingPressedEventV3(Mod::get(), std::string(kSettingKey)).listen(
