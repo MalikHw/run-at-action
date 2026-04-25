@@ -7,21 +7,23 @@
         "ios": "2.2081"
     },
     "version": "1.0.0",
-    "id": "malikhw47.smth",
-    "name": "nam",
+    "id": "malikhw47.runataction",
+    "name": "Run At Action",
     "developer": "MalikHw47",
-    "description": "desc.",
-    "tags": ["yes", "yeah"],
+    "description": "Run custom commands when selected gameplay events happen.",
+    "tags": ["utility", "gameplay"],
     "links": {
         "source": "https://github.com/MalikHw/geode-template",
         "community": "https://discord.gg/G9bZ92eg2n"
     },
-    "settings": {},
-    "suggested": [
-        {
-            "id": "something",
-            "importance": "recommended",
-            "reason": "n"
+    "settings": {
+        "open-events-editor": {
+            "name": "Event Commands",
+            "description": "Open the event list editor.",
+            "type": "button",
+            "buttons": {
+                "open": "ADD / EDIT"
+            }
         }
-    ]
+    }
 }
